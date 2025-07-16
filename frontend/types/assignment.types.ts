@@ -17,35 +17,4 @@ export interface CreateAssignmentDto {
   medicationId: number;
   startDate: string;
   days: number;
-}
-
-export interface UpdateAssignmentDto {
-  patientId?: number;
-  medicationId?: number;
-  startDate?: string;
-  days?: number;
-}
-
-export interface AssignmentQueryDto {
-  patientId?: number;
-  medicationId?: number;
-  startDate?: string;
-  days?: number;
-}
-
-export interface AssignmentFormProps {
-  onSuccess?: (assignment: Assignment) => void;
-  onError?: (error: Error) => void;
-}
-
-export interface AssignmentListProps {
-  assignments: Assignment[];
-  loading?: boolean;
-  onAssignmentSelect?: (assignment: Assignment) => void;
-}
-
-export enum TreatmentStatus {
-  ACTIVE = 'active',
-  COMPLETED = 'completed', 
-  UPCOMING = 'upcoming',
 } 

@@ -1,7 +1,6 @@
 'use client';
 
 import React, { Component, ReactNode } from 'react';
-import { ApiError } from '../types/common.types';
 
 interface Props {
   children: ReactNode;
@@ -25,8 +24,6 @@ export class ErrorBoundary extends Component<Props, State> {
   }
 
   componentDidCatch(error: Error, errorInfo: React.ErrorInfo) {
-    console.error('ErrorBoundary caught an error:', error, errorInfo);
-    
     this.props.onError?.(error, errorInfo);
   }
 
@@ -71,39 +68,4 @@ export class ErrorBoundary extends Component<Props, State> {
 
     return this.props.children;
   }
-}
-
-export function withErrorBoundary<P extends object>(
-  Component: React.ComponentType<P>,
-  errorFallback?: ReactNode
-) {
-  return function WithErrorBoundaryComponent(props: P) {
-    return (
-      <ErrorBoundary fallback={errorFallback}>
-        <Component {...props} />
-      </ErrorBoundary>
-    );
-  };
-}
-
-export function useErrorHandler() {
-  return {
-    handleError: (error: Error | ApiError) => {
-      console.error('Error handled:', error);
-    },
-    
-    handleApiError: (error: ApiError) => {
-      console.error('API Error:', {
-        message: error.message,
-        status: error.status,
-        details: error.details,
-      });
-      
-      if (error.status === 401) {
-        console.log('User unauthorized, redirecting to login...');
-      } else if (error.status >= 500) {
-        console.log('Server error occurred');
-      }
-    },
-  };
 } 

@@ -1,161 +1,130 @@
 'use client';
 
-import { useState } from 'react';
+import { Formik, Form } from 'formik';
 import { useCreateMedication } from '../hooks/useQueries';
 import { CreateMedicationDto } from '../types';
+import { medicationValidationSchema } from '../lib/validationSchemas';
+import { Card, Input, Button, Alert } from './ui';
+
+const initialValues: CreateMedicationDto = {
+  name: '',
+  dosage: '',
+  frequency: '',
+};
 
 export default function MedicationForm() {
-  const [formData, setFormData] = useState<CreateMedicationDto>({
-    name: '',
-    dosage: '',
-    frequency: '',
-  });
-  const [errors, setErrors] = useState<Partial<CreateMedicationDto>>({});
-
   const createMedicationMutation = useCreateMedication();
 
-  const handleInputChange = (field: keyof CreateMedicationDto, value: string) => {
-    setFormData(prev => ({ ...prev, [field]: value }));
-    // Clear error when user starts typing
-    if (errors[field]) {
-      setErrors(prev => ({ ...prev, [field]: undefined }));
-    }
-  };
-
-  const validateForm = (): boolean => {
-    const newErrors: Partial<CreateMedicationDto> = {};
-
-    if (!formData.name.trim()) {
-      newErrors.name = 'Medication name is required';
-    }
-
-    if (!formData.dosage.trim()) {
-      newErrors.dosage = 'Dosage is required';
-    }
-
-    if (!formData.frequency.trim()) {
-      newErrors.frequency = 'Frequency is required';
-    }
-
-    setErrors(newErrors);
-    return Object.keys(newErrors).length === 0;
-  };
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    
-    if (!validateForm()) return;
-
+  const handleSubmit = async (values: CreateMedicationDto, { resetForm }: { resetForm: () => void }) => {
     try {
-      await createMedicationMutation.mutateAsync(formData);
-      setFormData({ name: '', dosage: '', frequency: '' });
-      setErrors({});
-    } catch (error) {
-      console.error('Error creating medication:', error);
+      await createMedicationMutation.mutateAsync(values);
+      resetForm();
+    } catch (_error) {
     }
   };
 
   return (
-    <div className="bg-white rounded-lg shadow-md p-8 max-w-2xl mx-auto">
+    <Card variant="elevated" className="animate-slide-up">
       <div className="flex items-center mb-6">
-        <span className="text-blue-500 mr-3 text-2xl">💊</span>
-        <h2 className="text-2xl font-bold">Add New Medication</h2>
+        <div className="p-3 bg-green-100 rounded-lg">
+          <span className="text-green-600 text-2xl">💊</span>
+        </div>
+        <div className="ml-4">
+          <h2 className="text-2xl font-bold text-gray-900">Add New Medication</h2>
+          <p className="text-gray-600">Register a new medication in the system</p>
+        </div>
       </div>
 
       {createMedicationMutation.isError && (
-        <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-6">
-          {createMedicationMutation.error?.message || 'Failed to create medication'}
-        </div>
+        <Alert variant="error" title="Error Creating Medication" className="mb-6">
+          {createMedicationMutation.error?.message || 'Failed to create medication. Please try again.'}
+        </Alert>
       )}
 
       {createMedicationMutation.isSuccess && (
-        <div className="bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded mb-6">
-          Medication created successfully!
-        </div>
+        <Alert variant="success" title="Medication Created Successfully" className="mb-6">
+          The medication has been added to the system and is now available for patient assignments.
+        </Alert>
       )}
 
-      <form onSubmit={handleSubmit} className="space-y-6">
-        <div>
-          <label htmlFor="name" className="block text-sm font-medium text-gray-700 mb-2">
-            Medication Name *
-          </label>
-          <input
-            type="text"
-            id="name"
-            value={formData.name}
-            onChange={(e) => handleInputChange('name', e.target.value)}
-            placeholder="e.g., Aspirin"
-            className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 ${
-              errors.name ? 'border-red-500' : 'border-gray-300'
-            }`}
-            required
-          />
-          {errors.name && (
-            <p className="mt-1 text-sm text-red-600">{errors.name}</p>
-          )}
-        </div>
+      <Formik
+        initialValues={initialValues}
+        validationSchema={medicationValidationSchema}
+        onSubmit={handleSubmit}
+      >
+        {({ values, errors, touched, handleChange, handleBlur, isSubmitting }) => (
+          <Form className="space-y-6">
+            <Input
+              label="Medication Name"
+              name="name"
+              type="text"
+              placeholder="e.g., Aspirin, Ibuprofen"
+              value={values.name}
+              onChange={handleChange}
+              onBlur={handleBlur}
+              error={touched.name && errors.name ? errors.name : undefined}
+              required
+              leftIcon={
+                <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19.428 15.428a2 2 0 00-1.022-.547l-2.387-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 10.172V5L8 4z" />
+                </svg>
+              }
+            />
 
-        <div>
-          <label htmlFor="dosage" className="block text-sm font-medium text-gray-700 mb-2">
-            Dosage *
-          </label>
-          <input
-            type="text"
-            id="dosage"
-            value={formData.dosage}
-            onChange={(e) => handleInputChange('dosage', e.target.value)}
-            placeholder="e.g., 100mg"
-            className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 ${
-              errors.dosage ? 'border-red-500' : 'border-gray-300'
-            }`}
-            required
-          />
-          {errors.dosage && (
-            <p className="mt-1 text-sm text-red-600">{errors.dosage}</p>
-          )}
-        </div>
+            <Input
+              label="Dosage"
+              name="dosage"
+              type="text"
+              placeholder="e.g., 100mg, 2 tablets"
+              value={values.dosage}
+              onChange={handleChange}
+              onBlur={handleBlur}
+              error={touched.dosage && errors.dosage ? errors.dosage : undefined}
+              required
+              leftIcon={
+                <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 14h.01M12 14h.01M15 11h.01M12 11h.01M9 11h.01M7 21h10a2 2 0 002-2V5a2 2 0 00-2-2H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
+                </svg>
+              }
+            />
 
-        <div>
-          <label htmlFor="frequency" className="block text-sm font-medium text-gray-700 mb-2">
-            Frequency *
-          </label>
-          <input
-            type="text"
-            id="frequency"
-            value={formData.frequency}
-            onChange={(e) => handleInputChange('frequency', e.target.value)}
-            placeholder="e.g., Once daily"
-            className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 ${
-              errors.frequency ? 'border-red-500' : 'border-gray-300'
-            }`}
-            required
-          />
-          {errors.frequency && (
-            <p className="mt-1 text-sm text-red-600">{errors.frequency}</p>
-          )}
-        </div>
+            <Input
+              label="Frequency"
+              name="frequency"
+              type="text"
+              placeholder="e.g., Once daily, Twice a day"
+              value={values.frequency}
+              onChange={handleChange}
+              onBlur={handleBlur}
+              error={touched.frequency && errors.frequency ? errors.frequency : undefined}
+              required
+              helpText="Specify how often the medication should be taken"
+              leftIcon={
+                <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+              }
+            />
 
-        <button
-          type="submit"
-          disabled={createMedicationMutation.isPending}
-          className={`w-full flex items-center justify-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white ${
-            createMedicationMutation.isPending
-              ? 'bg-gray-400 cursor-not-allowed'
-              : 'bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500'
-          }`}
-        >
-          {createMedicationMutation.isPending ? (
-            <>
-              <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
-              Creating...
-            </>
-          ) : (
-            <>
-              💾 Create Medication
-            </>
-          )}
-        </button>
-      </form>
-    </div>
+            <Button
+              type="submit"
+              size="lg"
+              className="w-full"
+              variant="success"
+              isLoading={isSubmitting || createMedicationMutation.isPending}
+              leftIcon={
+                !isSubmitting && !createMedicationMutation.isPending ? (
+                  <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+                  </svg>
+                ) : undefined
+              }
+            >
+              {isSubmitting || createMedicationMutation.isPending ? 'Creating Medication...' : 'Create Medication'}
+            </Button>
+          </Form>
+        )}
+      </Formik>
+    </Card>
   );
 } 

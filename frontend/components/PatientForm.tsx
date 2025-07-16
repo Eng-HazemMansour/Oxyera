@@ -1,140 +1,109 @@
 'use client';
 
-import { useState } from 'react';
+import { Formik, Form } from 'formik';
 import { useCreatePatient } from '../hooks/useQueries';
 import { CreatePatientDto } from '../types';
+import { patientValidationSchema } from '../lib/validationSchemas';
+import { Card, Input, Button, Alert } from './ui';
+
+const initialValues: CreatePatientDto = {
+  name: '',
+  dateOfBirth: '',
+};
 
 export default function PatientForm() {
-  const [formData, setFormData] = useState<CreatePatientDto>({
-    name: '',
-    dateOfBirth: '',
-  });
-  const [errors, setErrors] = useState<Partial<CreatePatientDto>>({});
-
   const createPatientMutation = useCreatePatient();
 
-  const handleInputChange = (field: keyof CreatePatientDto, value: string) => {
-    setFormData(prev => ({ ...prev, [field]: value }));
-    // Clear error when user starts typing
-    if (errors[field]) {
-      setErrors(prev => ({ ...prev, [field]: undefined }));
-    }
-  };
-
-  const validateForm = (): boolean => {
-    const newErrors: Partial<CreatePatientDto> = {};
-
-    if (!formData.name.trim()) {
-      newErrors.name = 'Name is required';
-    }
-
-    if (!formData.dateOfBirth) {
-      newErrors.dateOfBirth = 'Date of birth is required';
-    } else {
-      const birthDate = new Date(formData.dateOfBirth);
-      const today = new Date();
-      if (birthDate > today) {
-        newErrors.dateOfBirth = 'Date of birth cannot be in the future';
-      }
-    }
-
-    setErrors(newErrors);
-    return Object.keys(newErrors).length === 0;
-  };
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    
-    if (!validateForm()) return;
-
+  const handleSubmit = async (values: CreatePatientDto, { resetForm }: { resetForm: () => void }) => {
     try {
-      await createPatientMutation.mutateAsync(formData);
-      setFormData({ name: '', dateOfBirth: '' });
-      setErrors({});
-    } catch (error) {
-      console.error('Error creating patient:', error);
+      await createPatientMutation.mutateAsync(values);
+      resetForm();
+    } catch (_error) {
     }
   };
 
   return (
-    <div className="bg-white rounded-lg shadow-md p-8 max-w-2xl mx-auto">
+    <Card variant="elevated" className="animate-slide-up">
       <div className="flex items-center mb-6">
-        <span className="text-blue-500 mr-3 text-2xl">👤</span>
-        <h2 className="text-2xl font-bold">Add New Patient</h2>
+        <div className="p-3 bg-blue-100 rounded-lg">
+          <span className="text-blue-600 text-2xl">👤</span>
+        </div>
+        <div className="ml-4">
+          <h2 className="text-2xl font-bold text-gray-900">Add New Patient</h2>
+          <p className="text-gray-600">Enter patient information to create a new record</p>
+        </div>
       </div>
 
       {createPatientMutation.isError && (
-        <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-6">
-          {createPatientMutation.error?.message || 'Failed to create patient'}
-        </div>
+        <Alert variant="error" title="Error Creating Patient" className="mb-6">
+          {createPatientMutation.error?.message || 'Failed to create patient. Please try again.'}
+        </Alert>
       )}
 
       {createPatientMutation.isSuccess && (
-        <div className="bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded mb-6">
-          Patient created successfully!
-        </div>
+        <Alert variant="success" title="Patient Created Successfully" className="mb-6">
+          The patient has been added to the system and is now available for medication assignments.
+        </Alert>
       )}
 
-      <form onSubmit={handleSubmit} className="space-y-6">
-        <div>
-          <label htmlFor="name" className="block text-sm font-medium text-gray-700 mb-2">
-            Full Name *
-          </label>
-          <input
-            type="text"
-            id="name"
-            value={formData.name}
-            onChange={(e) => handleInputChange('name', e.target.value)}
-            className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 ${
-              errors.name ? 'border-red-500' : 'border-gray-300'
-            }`}
-            required
-          />
-          {errors.name && (
-            <p className="mt-1 text-sm text-red-600">{errors.name}</p>
-          )}
-        </div>
+      <Formik
+        initialValues={initialValues}
+        validationSchema={patientValidationSchema}
+        onSubmit={handleSubmit}
+      >
+        {({ values, errors, touched, handleChange, handleBlur, isSubmitting }) => (
+          <Form className="space-y-6">
+            <Input
+              label="Full Name"
+              name="name"
+              type="text"
+              placeholder="Enter patient's full name"
+              value={values.name}
+              onChange={handleChange}
+              onBlur={handleBlur}
+              error={touched.name && errors.name ? errors.name : undefined}
+              required
+              leftIcon={
+                <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                </svg>
+              }
+            />
 
-        <div>
-          <label htmlFor="dateOfBirth" className="block text-sm font-medium text-gray-700 mb-2">
-            Date of Birth *
-          </label>
-          <input
-            type="date"
-            id="dateOfBirth"
-            value={formData.dateOfBirth}
-            onChange={(e) => handleInputChange('dateOfBirth', e.target.value)}
-            className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 ${
-              errors.dateOfBirth ? 'border-red-500' : 'border-gray-300'
-            }`}
-            required
-          />
-          {errors.dateOfBirth && (
-            <p className="mt-1 text-sm text-red-600">{errors.dateOfBirth}</p>
-          )}
-        </div>
+            <Input
+              label="Date of Birth"
+              name="dateOfBirth"
+              type="date"
+              value={values.dateOfBirth}
+              onChange={handleChange}
+              onBlur={handleBlur}
+              error={touched.dateOfBirth && errors.dateOfBirth ? errors.dateOfBirth : undefined}
+              required
+              leftIcon={
+                <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                </svg>
+              }
+            />
 
-        <button
-          type="submit"
-          disabled={createPatientMutation.isPending}
-          className={`w-full flex items-center justify-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white ${
-            createPatientMutation.isPending
-              ? 'bg-gray-400 cursor-not-allowed'
-              : 'bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500'
-          }`}
-        >
-          {createPatientMutation.isPending ? (
-            <>
-              <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
-              Creating...
-            </>
-          ) : (
-            <>
-              💾 Create Patient
-            </>
-          )}
-        </button>
-      </form>
-    </div>
+            <Button
+              type="submit"
+              size="lg"
+              className="w-full"
+              isLoading={isSubmitting || createPatientMutation.isPending}
+              leftIcon={
+                !isSubmitting && !createPatientMutation.isPending ? (
+                  <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+                  </svg>
+                ) : undefined
+              }
+            >
+              {isSubmitting || createPatientMutation.isPending ? 'Creating Patient...' : 'Create Patient'}
+            </Button>
+          </Form>
+        )}
+      </Formik>
+    </Card>
   );
 } 
