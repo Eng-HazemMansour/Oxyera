@@ -1,15 +1,51 @@
 import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
+import { ValidationPipe, Logger } from '@nestjs/common';
+import { getAppConfig } from './config';
+import { GlobalExceptionFilter, LoggingInterceptor } from './common';
 
 async function bootstrap() {
+  const logger = new Logger('Bootstrap');
+  const appConfig = getAppConfig();
+  
   const app = await NestFactory.create(AppModule);
-
+  
   app.enableCors({
-    origin: 'http://localhost:3000',
-    methods: ['GET', 'POST', 'PUT', 'DELETE'],
-    credentials: true,
+    origin: appConfig.corsOrigin,
+    credentials: appConfig.corsCredentials,
   });
-
-  await app.listen(process.env.PORT ?? 8080);
+  
+  app.useGlobalPipes(
+    new ValidationPipe({
+      whitelist: true,
+      forbidNonWhitelisted: true,
+      transform: true,
+      disableErrorMessages: appConfig.nodeEnv === 'production',
+      exceptionFactory: (errors) => {
+        const messages = errors.map(error => {
+          const constraints = Object.values(error.constraints || {});
+          return `${error.property}: ${constraints.join(', ')}`;
+        });
+        return new Error(`Validation failed: ${messages.join('; ')}`);
+      },
+    })
+  );
+  
+  app.useGlobalFilters(new GlobalExceptionFilter());
+  
+  if (appConfig.nodeEnv === 'development') {
+    app.useGlobalInterceptors(new LoggingInterceptor());
+  }
+  
+  await app.listen(appConfig.port);
+  
+  logger.log(`Application is running on port ${appConfig.port}`);
+  logger.log(`Environment: ${appConfig.nodeEnv}`);
+  logger.log(`CORS enabled for: ${appConfig.corsOrigin}`);
 }
-bootstrap();
+
+bootstrap().catch((error) => {
+  const logger = new Logger('Bootstrap');
+  logger.error('Failed to start application', error);
+  process.exit(1);
+});

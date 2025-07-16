@@ -1,20 +1,23 @@
 import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
-import { SampleModule } from './sample/sample.module';
-import { AppController } from './app.controller';
-import { AppService } from './app.service';
+import { ConfigModule } from '@nestjs/config';
+import { PatientModule } from './modules/patient.module';
+import { MedicationModule } from './modules/medication.module';
+import { AssignmentModule } from './modules/assignment.module';
+import { getDatabaseConfig } from './config';
 
 @Module({
   imports: [
-    TypeOrmModule.forRoot({
-      type: 'sqlite',
-      database: 'database.sqlite',
-      entities: [__dirname + '/**/*.entity{.ts,.js}'],
-      synchronize: true,
+    ConfigModule.forRoot({
+      isGlobal: true,
+      envFilePath: ['.env.local', '.env'],
     }),
-    SampleModule,
+    TypeOrmModule.forRoot(getDatabaseConfig()),
+    PatientModule,
+    MedicationModule,
+    AssignmentModule,
   ],
-  controllers: [AppController],
-  providers: [AppService],
+  controllers: [],
+  providers: [],
 })
 export class AppModule {}
