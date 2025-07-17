@@ -110,4 +110,3 @@ The SQLite database is located at `backend/database.sqlite`.
 ✅ Email your repo link to [dev@oxyera.com](mailto\:dev@oxyera.com).
 
 Thank you for your interest in Oxyera. We look forward to reviewing your structured, clear, and working solution!
-

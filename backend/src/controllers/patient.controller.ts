@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete, ValidationPipe, HttpCode, HttpStatus } from '@nestjs/common';
+import { Controller, Get, Post, Body, Patch, Param, Delete, HttpCode, HttpStatus } from '@nestjs/common';
 import { PatientService } from '../models/services/patient.service';
 import { CreatePatientDto, UpdatePatientDto } from '../views/dto/patient.dto';
 import { PatientResponse } from '../views/responses/patient.response';
@@ -9,7 +9,7 @@ export class PatientController {
 
   @Post()
   @HttpCode(HttpStatus.CREATED)
-  async create(@Body(ValidationPipe) createPatientDto: CreatePatientDto): Promise<PatientResponse> {
+  async create(@Body() createPatientDto: CreatePatientDto): Promise<PatientResponse> {
     return await this.patientService.create(createPatientDto);
   }
 
@@ -24,7 +24,7 @@ export class PatientController {
   }
 
   @Patch(':id')
-  async update(@Param('id') id: string, @Body(ValidationPipe) updatePatientDto: UpdatePatientDto): Promise<PatientResponse> {
+  async update(@Param('id') id: string, @Body() updatePatientDto: UpdatePatientDto): Promise<PatientResponse> {
     return await this.patientService.update(+id, updatePatientDto);
   }
 

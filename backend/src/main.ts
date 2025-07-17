@@ -1,6 +1,6 @@
 import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
-import { ValidationPipe, Logger } from '@nestjs/common';
+import { Logger } from '@nestjs/common';
 import { getAppConfig } from './config';
 import { GlobalExceptionFilter, LoggingInterceptor } from './common';
 
@@ -14,22 +14,6 @@ async function bootstrap() {
     origin: appConfig.corsOrigin,
     credentials: appConfig.corsCredentials,
   });
-  
-  app.useGlobalPipes(
-    new ValidationPipe({
-      whitelist: true,
-      forbidNonWhitelisted: true,
-      transform: true,
-      disableErrorMessages: appConfig.nodeEnv === 'production',
-      exceptionFactory: (errors) => {
-        const messages = errors.map(error => {
-          const constraints = Object.values(error.constraints || {});
-          return `${error.property}: ${constraints.join(', ')}`;
-        });
-        return new Error(`Validation failed: ${messages.join('; ')}`);
-      },
-    })
-  );
   
   app.useGlobalFilters(new GlobalExceptionFilter());
   

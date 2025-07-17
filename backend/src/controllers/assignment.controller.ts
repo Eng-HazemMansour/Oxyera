@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete, ValidationPipe, HttpCode, HttpStatus } from '@nestjs/common';
+import { Controller, Get, Post, Body, Patch, Param, Delete, HttpCode, HttpStatus } from '@nestjs/common';
 import { AssignmentService } from '../models/services/assignment.service';
 import { CreateAssignmentDto, UpdateAssignmentDto } from '../views/dto/assignment.dto';
 import { AssignmentResponse } from '../views/responses/assignment.response';
@@ -9,7 +9,7 @@ export class AssignmentController {
 
   @Post()
   @HttpCode(HttpStatus.CREATED)
-  async create(@Body(ValidationPipe) createAssignmentDto: CreateAssignmentDto): Promise<AssignmentResponse> {
+  async create(@Body() createAssignmentDto: CreateAssignmentDto): Promise<AssignmentResponse> {
     return await this.assignmentService.create(createAssignmentDto);
   }
 
@@ -29,7 +29,7 @@ export class AssignmentController {
   }
 
   @Patch(':id')
-  async update(@Param('id') id: string, @Body(ValidationPipe) updateAssignmentDto: UpdateAssignmentDto): Promise<AssignmentResponse> {
+  async update(@Param('id') id: string, @Body() updateAssignmentDto: UpdateAssignmentDto): Promise<AssignmentResponse> {
     return await this.assignmentService.update(+id, updateAssignmentDto);
   }
 

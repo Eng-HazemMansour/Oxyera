@@ -4,6 +4,7 @@ import { ConfigModule } from '@nestjs/config';
 import { PatientModule } from './modules/patient.module';
 import { MedicationModule } from './modules/medication.module';
 import { AssignmentModule } from './modules/assignment.module';
+import { ValidationModule } from './common/validation/validation.module';
 import { getDatabaseConfig } from './config';
 
 @Module({
@@ -13,6 +14,7 @@ import { getDatabaseConfig } from './config';
       envFilePath: ['.env.local', '.env'],
     }),
     TypeOrmModule.forRoot(getDatabaseConfig()),
+    ValidationModule,
     PatientModule,
     MedicationModule,
     AssignmentModule,
